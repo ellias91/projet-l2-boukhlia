@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur de Prêt</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+
+        h2 { color: #333; }
+
+        /* Style du formulaire */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: inline-block;
+            width: 100px;
+            font-weight: bold;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 150px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+        button:hover { background-color: #0056b3; }
+
+        /* Résultat Mensualité */
+        #resultat-mensualite {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        /* Style du tableau */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+            color: #333;
+        }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Simulateur de calcul des taux</h2>
+        
+        <div class="form-group">
+            <label for="amount">Montant :</label>
+            <input type="number" id="amount" placeholder="Ex: 10000" value="10000"> €
+        </div>
+        <div class="form-group">
+            <label for="years">Années :</label>
+            <input type="number" id="years" placeholder="Ex: 2" value="2"> ans
+        </div>
+        <div class="form-group">
+            <label for="rate">Taux (%) :</label>
+            <input type="number" id="rate" placeholder="Ex: 8.5" step="0.1" value="8.5"> %
+        </div>
+
+        <button onclick="calculerPret()">Calculer & Afficher les échéances</button>
+
+        <div id="resultat-mensualite"></div>
+
+        <table id="amortissement-table" style="display:none;">
+            <thead>
+                <tr>
+                    <th>Période</th>
+                    <th>Capital Amorti</th>
+                    <th>Intérêts</th>
+                    <th>Capital Restant dû</th>
+                    <th>Mensualité</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        function calculerPret() {
+            // 1. Récupération des valeurs
+            let capital = parseFloat(document.getElementById('amount').value);
+            let annees = parseFloat(document.getElementById('years').value);
+            let tauxAnnuel = parseFloat(document.getElementById('rate').value);
+
+            if (isNaN(capital) || isNaN(annees) || isNaN(tauxAnnuel)) {
+                alert("Veuillez remplir tous les champs correctement.");
+                return;
+            }
+
+            // 2. Calculs mathématiques
+            let mois = annees * 12; // Nombre total de mois
+            let tauxMensuel = (tauxAnnuel / 100) / 12; // Taux ramené au mois
+
+            // Formule de la mensualité : M = P * [ r / (1 - (1+r)^-n) ]
+            // P = Capital, r = taux mensuel, n = nombre de mois
+            let mensualite = (capital * tauxMensuel) / (1 - Math.pow(1 + tauxMensuel, -mois));
+
+            // Affichage de la mensualité arrondie
+            document.getElementById('resultat-mensualite').innerHTML = 
+                `Mensualité : ${mensualite.toFixed(2)} € par mois`;
+
+            // 3. Génération du tableau d'amortissement
+            let tbody = document.getElementById('table-body');
+            tbody.innerHTML = ""; // On vide le tableau précédent
+            
+            let capitalRestant = capital;
+
+            for (let i = 1; i <= mois; i++) {
+                // Calcul des intérêts pour ce mois
+                let interetMois = capitalRestant * tauxMensuel;
+                
+                // Calcul du capital remboursé ce mois (Mensualité - Intérêts)
+                let capitalAmorti = mensualite - interetMois;
+                
+                // Nouveau capital restant
+                let nouveauCapitalRestant = capitalRestant - capitalAmorti;
+
+                // Si c'est le dernier mois, on s'assure de tomber à 0 (pour éviter les erreurs d'arrondi)
+                if (i === mois) {
+                    // Ajustement final léger si besoin
+                    nouveauCapitalRestant = 0; 
+                }
+
+                // Création de la ligne HTML
+                let row = `<tr>
+                    <td>${i}</td>
+                    <td>${capitalAmorti.toFixed(0)} €</td>
+                    <td>${interetMois.toFixed(0)} €</td>
+                    <td>${Math.abs(nouveauCapitalRestant).toFixed(0)} €</td>
+                    <td>${mensualite.toFixed(0)} €</td>
+                </tr>`;
+
+                tbody.innerHTML += row;
+
+                // Mise à jour pour le tour suivant
+                capitalRestant = nouveauCapitalRestant;
+            }
+
+            // Afficher le tableau
+            document.getElementById('amortissement-table').style.display = 'table';
+        }
+    </script>
+
+</body>
+</html>
