@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Quiz</title>
+  
+  <style>
+    /* La boite de félicitations (cachée au début) */
+    #alert {
+      display: none; 
+      background-color: #d4edda; /* Vert clair */
+      color: #155724; /* Vert foncé */
+      border: 1px solid #c3e6cb;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      font-family: sans-serif;
+    }
+
+    .alert-title {
+      font-weight: bold;
+      font-size: 1.2em;
+      margin-bottom: 5px;
+    }
+
+    /* Classe activée par le Javascript pour montrer l'alerte */
+    #alert.active {
+      display: block;
+    }
+
+    .question-item {
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      font-family: sans-serif;
+    }
+
+    /* COULEURS : Vert quand c'est juste, Rouge quand c'est faux */
+    .question-item.correct {
+      color: green;
+      font-weight: bold;
+    }
+
+    .question-item.incorrect {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="alert">
+    <div class="alert-title">Congratulations!!</div>
+    You got them all right!
+  </div>
+
+  <form id="quiz-form">
+    <ol>
+      <li class="question-item">
+        <div>What does this code return? (<code>0 || '' || false || "Hi"</code>)</div>
+        <div>
+          <ol>
+            <li class="answer-item">
+              <label>
+                <input class="answer" type="radio" name="answer-1" value="false">
+                <code>0</code>
+              </label>
+            </li>
+            <li class="answer-item">
+              <label>
+                <input class="answer" type="radio" name="answer-1" value="true">
+                <code>"Hi"</code>
+              </label>
+            </li>
+            <li class="answer-item">
+              <label>
+                <input class="answer" type="radio" name="answer-1" value="false">
+                <code>false</code>
+              </label>
+            </li>
+            <li class="answer-item">
+              <label>
+                <input class="answer" type="radio" name="answer-1" value="false">
+                <code>''</code>
+              </label>
+            </li>
+          </ol>
+        </div>
+      </li>
+
+      <li class="question-item">
+        <div>What is it called when a function calls itself?</div>
+        <div>
+          <ol>
+            <li class="answer-item">
+              <label>
+                <input class="answer" type="radio" name="answer-2" value="false">
+                Inception
+              </label>
+            </li>
+            <li class="answer-item">
+              <label>
+                <input class="answer" type="radio" name="answer-2" value="false">
+                Self-Referential
+              </label>
+            </li>
+            <li class="answer-item">
+              <label>
+                <input class="answer" type="radio" name="answer-2" value="true">
+                Recursion
+              </label>
+            </li>
+            <li class="answer-item">
+              <label>
+                <input class="answer" type="radio" name="answer-2" value="false">
+                Who Cares
+              </label>
+            </li>
+          </ol>
+        </div>
+      </li>
+
+      <li class="question-item">
+        <div>How do you access the value of the <code>data-count</code> data attribute in JavaScript?</div>
+        <div>
+          <ol>
+            <li class="answer-item">
+              <label>
+                <input class="answer" type="radio" name="answer-3" value="true">
+                <code>element.dataset.count</code>
+              </label>
+            </li>
+            <li class="answer-item">
+              <label>
+                <input class="answer" type="radio" name="answer-3" value="false">
+                <code>element.dataAttribute.count</code>
+              </label>
+            </li>
+            <li class="answer-item">
+              <label>
+                <input class="answer" type="radio" name="answer-3" value="false">
+                <code>element.dataset.dataCount</code>
+              </label>
+            </li>
+            <li class="answer-item">
+              <label>
+                <input class="answer" type="radio" name="answer-3" value="false">
+                <code>element.dataCount</code>
+              </label>
+            </li>
+          </ol>
+        </div>
+      </li>
+    </ol>
+    <button type="submit">Check</button>
+  </form>
+
+  <script>
+    const form = document.getElementById('quiz-form');
+    const alertBox = document.getElementById('alert');
+    const questionItems = document.querySelectorAll('.question-item');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault(); // Empêche le rechargement de la page
+
+      // On cache l'alerte pour recommencer
+      alertBox.classList.remove('active');
+      
+      let allCorrect = true;
+
+      questionItems.forEach(question => {
+        // Reset des couleurs
+        question.classList.remove('correct', 'incorrect');
+
+        // On regarde ce qui est coché
+        const selected = question.querySelector('input:checked');
+
+        if (selected) {
+          // Si value="true" -> VERT, sinon ROUGE
+          if (selected.value === 'true') {
+            question.classList.add('correct');
+          } else {
+            question.classList.add('incorrect');
+            allCorrect = false;
+          }
+        } else {
+          // Rien coché = Faux
+          allCorrect = false;
+        }
+      });
+
+      // Si tout est bon, on affiche le message
+      if (allCorrect) {
+        alertBox.classList.add('active');
+      }
+    });
+  </script>
+
+</body>
+</html>
