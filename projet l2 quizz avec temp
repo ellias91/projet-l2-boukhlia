@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API QUIZZ - Avec Timer</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .quiz-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+            overflow: hidden;
+            padding: 20px;
+            position: relative; /* Pour le positionnement du timer */
+        }
+
+        /* Nouveau style pour le timer */
+        .timer-bar {
+            background-color: #e9ecef;
+            height: 10px;
+            width: 100%;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .timer-fill {
+            height: 100%;
+            background-color: #007bff; /* Bleu */
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        .timer-text {
+            text-align: right;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .choices {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .choice-btn {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            color: #555;
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .choice-btn:hover {
+            background-color: #f9f9f9;
+        }
+
+        .correct {
+            background-color: #28a745 !important;
+            color: white !important;
+            border-color: #28a745 !important;
+        }
+
+        .wrong {
+            background-color: #dc3545 !important;
+            color: white !important;
+            border-color: #dc3545 !important;
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="quiz-container" id="quiz">
+        <div class="loading">Chargement des questions...</div>
+    </div>
+
+    <script>
+        const API_URL = 'https://opentdb.com/api.php?amount=10&category=18&type=multiple';
+
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let isAnswering = false;
+        
+        // Variables pour le Timer
+        let timeLeft = 10;
+        let timerInterval;
+        const TIME_LIMIT = 10; // 10 secondes par question
+
+        async function fetchQuestions() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                questions = data.results.map(q => {
+                    const formattedQuestion = {
+                        question: q.question,
+                        choices: [...q.incorrect_answers]
+                    };
+                    const randomIndex = Math.floor(Math.random() * 4);
+                    formattedQuestion.choices.splice(randomIndex, 0, q.correct_answer);
+                    formattedQuestion.answer = q.correct_answer;
+                    return formattedQuestion;
+                });
+
+                displayQuestion();
+            } catch (error) {
+                console.error("Erreur:", error);
+                document.getElementById('quiz').innerHTML = "<p>Erreur de chargement.</p>";
+            }
+        }
+
+        function displayQuestion() {
+            // Reset du timer à chaque nouvelle question
+            clearInterval(timerInterval);
+            
+            if (currentQuestionIndex >= questions.length) {
+                document.getElementById('quiz').innerHTML = "<h2>Fin du Quiz !</h2><button class='choice-btn' onclick='location.reload()'>Recommencer</button>";
+                return;
+            }
+
+            const currentQ = questions[currentQuestionIndex];
+            const quizContainer = document.getElementById('quiz');
+            isAnswering = false;
+
+            let choicesHtml = '';
+            currentQ.choices.forEach(choice => {
+                // On ajoute un ID spécial au bouton pour pouvoir retrouver la bonne réponse plus tard
+                const isCorrect = choice === currentQ.answer;
+                choicesHtml += `<li><button class="choice-btn" data-answer="${choice.replace(/"/g, '&quot;')}" onclick="checkAnswer(this, '${choice.replace(/'/g, "\\'")}')">${choice}</button></li>`;
+            });
+
+            quizContainer.innerHTML = `
+                <div class="timer-text" id="time-text">Temps: ${TIME_LIMIT}s</div>
+                <div class="timer-bar"><div class="timer-fill" id="time-bar"></div></div>
+                <div>
+                    <p>Question ${currentQuestionIndex + 1} / ${questions.length}</p>
+                    <h1>${currentQ.question}</h1>
+                    <ul class="choices">
+                        ${choicesHtml}
+                    </ul>
+                </div>
+            `;
+
+            // Lancer le compte à rebours
+            startTimer();
+        }
+
+        function startTimer() {
+            timeLeft = TIME_LIMIT;
+            const timeBar = document.getElementById('time-bar');
+            const timeText = document.getElementById('time-text');
+            
+            // On reset la barre visuelle
+            timeBar.style.width = '100%';
+            timeBar.style.backgroundColor = '#007bff';
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timeText.innerText = `Temps: ${timeLeft}s`;
+                
+                // Mettre à jour la largeur de la barre (en pourcentage)
+                const percentage = (timeLeft / TIME_LIMIT) * 100;
+                timeBar.style.width = percentage + '%';
+
+                // Changer la couleur en rouge si on arrive à la fin (moins de 3 sec)
+                if (timeLeft <= 3) {
+                    timeBar.style.backgroundColor = '#dc3545';
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function handleTimeOut() {
+            // Quand le temps est écoulé, on considère que c'est faux
+            if (isAnswering) return;
+            isAnswering = true;
+            
+            // Montrer la bonne réponse
+            revealCorrectAnswer();
+
+            setTimeout(() => {
+                currentQuestionIndex++;
+                displayQuestion();
+            }, 2000);
+        }
+
+        function checkAnswer(btn, selectedChoice) {
+            if (isAnswering) return;
+            clearInterval(timerInterval); // On arrête le timer quand l'utilisateur clique
+            isAnswering = true;
+
+            const currentQ = questions[currentQuestionIndex];
+            const correctChoice = currentQ.answer;
+
+            // Décodage HTML simple pour comparer
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = correctChoice;
+            const correctDecoded = tempDiv.innerText;
+            
+            tempDiv.innerHTML = selectedChoice;
+            const selectedDecoded = tempDiv.innerText;
+
+            if (selectedDecoded === correctDecoded) {
+                btn.classList.add('correct');
+            } else {
+                btn.classList.add('wrong');
+                // Si on se trompe, on montre quand même la bonne réponse
+                revealCorrectAnswer();
+            }
+
+            setTimeout(() => {
+                currentQuestionIndex++;
+                displayQuestion();
+            }, 1500);
+        }
+
+        function revealCorrectAnswer() {
+            // Cette fonction cherche le bouton qui contient la bonne réponse et le met en vert
+            const currentQ = questions[currentQuestionIndex];
+            const buttons = document.querySelectorAll('.choice-btn');
+            
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = currentQ.answer;
+            const correctDecoded = tempDiv.innerText;
+
+            buttons.forEach(button => {
+                tempDiv.innerHTML = button.innerText; // Le texte du bouton
+                if (tempDiv.innerText === correctDecoded) {
+                    button.classList.add('correct');
+                }
+            });
+        }
+
+        fetchQuestions();
+    </script>
+</body>
+</html>
