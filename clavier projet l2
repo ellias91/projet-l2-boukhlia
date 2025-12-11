@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Clavier Virtuel Design</title>
+  <style>
+    /* 1. Mise en page générale et fond d'écran */
+    body {
+      margin: 0;
+      height: 100vh; /* Prend toute la hauteur de l'écran */
+      display: flex; /* Active le mode Flexbox */
+      flex-direction: column; /* Aligne verticalement */
+      justify-content: center; /* Centre verticalement */
+      align-items: center; /* Centre horizontalement */
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      /* Joli dégradé de fond sombre */
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      color: white;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-weight: 300;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* 2. La zone de texte (L'écran) */
+    #output {
+      width: 700px;
+      height: 100px;
+      padding: 20px;
+      font-size: 1.5em;
+      border: none;
+      border-radius: 15px;
+      background-color: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      margin-bottom: 30px;
+      outline: none;
+      color: #333;
+      resize: none; /* Empêche de redimensionner */
+      font-family: monospace;
+    }
+
+    /* 3. Le conteneur du clavier */
+    .keyboard-container {
+      background: rgba(255, 255, 255, 0.1); /* Effet verre */
+      backdrop-filter: blur(10px); /* Flou d'arrière-plan */
+      padding: 30px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 12px; /* Espace entre les lignes */
+    }
+
+    /* Les lignes de touches */
+    .row {
+      display: flex;
+      justify-content: center; /* CENTRE les touches dans la ligne */
+      gap: 8px; /* Espace entre les touches */
+    }
+
+    /* 4. Le design des touches */
+    .key {
+      width: 50px;
+      height: 55px;
+      background-color: #f0f0f0;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1em;
+      font-weight: bold;
+      color: #444;
+      cursor: pointer;
+      /* Effet 3D en bas du bouton */
+      box-shadow: 0 4px 0 #bbb, 0 5px 10px rgba(0,0,0,0.1);
+      transition: all 0.1s ease;
+    }
+
+    /* Quand on passe la souris dessus */
+    .key:hover {
+      background-color: #fff;
+      transform: translateY(-2px);
+    }
+
+    /* Quand on clique (effet d'enfoncement) */
+    .key:active {
+      transform: translateY(4px); /* Descend */
+      box-shadow: 0 0 0 #bbb; /* L'ombre disparaît */
+    }
+
+    /* Barre d'espace spécifique */
+    .space-key {
+      width: 300px;
+      background-color: #e0e0e0;
+    }
+
+    /* 5. Zone des boutons d'actions en bas */
+    .actions {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .action-btn {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 50px;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      font-size: 0.9em;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
+    }
+
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Couleurs spécifiques pour les boutons d'action */
+    #btn-switch {
+      background: linear-gradient(45deg, #00b09b, #96c93d); /* Dégradé Vert/Turquoise */
+    }
+
+    #btn-clear {
+      background: linear-gradient(45deg, #ff416c, #ff4b2b); /* Dégradé Rouge/Orange */
+    }
+
+  </style>
+</head>
+<body>
+
+  <h1>PROJET CLAVIER</h1>
+
+  <textarea id="output" placeholder="Tapez quelque chose..."></textarea>
+
+  <div class="keyboard-container">
+    <div id="keys-area"></div>
+
+    <div class="row">
+      <button class="key space-key" onclick="ajouterLettre(' ')">ESPACE</button>
+    </div>
+
+    <div class="actions">
+      <button class="action-btn" id="btn-switch">MODE QWERTY</button>
+      <button class="action-btn" id="btn-clear">TOUT EFFACER</button>
+    </div>
+  </div>
+
+  <script>
+    const output = document.getElementById('output');
+    const keysArea = document.getElementById('keys-area');
+    const btnSwitch = document.getElementById('btn-switch');
+    const btnClear = document.getElementById('btn-clear');
+
+    // Configuration des claviers
+    const layouts = {
+      azerty: [
+        "AZERTYUIOP",
+        "QSDFGHJKLM",
+        "WXCVBN"
+      ],
+      qwerty: [
+        "QWERTYUIOP",
+        "ASDFGHJKL",
+        "ZXCVBNM"
+      ]
+    };
+
+    let currentMode = 'azerty';
+
+    // Fonction pour dessiner le clavier
+    function creerClavier(mode) {
+      keysArea.innerHTML = ''; // Nettoyer
+      const layout = layouts[mode];
+
+      layout.forEach(ligneLettres => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'row'; // Classe CSS pour centrer la ligne
+
+        for (let lettre of ligneLettres) {
+          const btn = document.createElement('button');
+          btn.className = 'key';
+          btn.innerText = lettre;
+          btn.onclick = () => ajouterLettre(lettre);
+          rowDiv.appendChild(btn);
+        }
+        keysArea.appendChild(rowDiv);
+      });
+    }
+
+    // Fonction pour écrire
+    function ajouterLettre(lettre) {
+      output.value += lettre;
+      output.focus();
+    }
+
+    // Bouton Switch
+    btnSwitch.addEventListener('click', () => {
+      if (currentMode === 'azerty') {
+        currentMode = 'qwerty';
+        btnSwitch.innerText = "MODE AZERTY";
+        btnSwitch.style.background = "linear-gradient(45deg, #4facfe, #00f2fe)"; // Change couleur en bleu
+      } else {
+        currentMode = 'azerty';
+        btnSwitch.innerText = "MODE QWERTY";
+        btnSwitch.style.background = "linear-gradient(45deg, #00b09b, #96c93d)"; // Retour au vert
+      }
+      creerClavier(currentMode);
+    });
+
+    // Bouton Effacer
+    btnClear.addEventListener('click', () => {
+      output.value = '';
+      output.focus();
+    });
+
+    // Lancement
+    creerClavier('azerty');
+  </script>
+
+</body>
+</html>
