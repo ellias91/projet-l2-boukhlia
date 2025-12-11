@@ -84,7 +84,7 @@
       transform: translateY(-2px);
     }
 
-    /* Quand on clique (effet d'enfoncement) */
+    /* Quand on clique  */
     .key:active {
       transform: translateY(4px); /* Descend */
       box-shadow: 0 0 0 #bbb; /* L'ombre disparaît */
